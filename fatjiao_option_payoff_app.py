@@ -134,11 +134,13 @@ if st.session_state.strategy_description or st.session_state.strategy_example:
 # 当前组合显示
 st.subheader("当前组合")
 if st.session_state.legs:
-    cols = st.columns([1, 1, 2, 2, 1, 1])
-    headers = ["类型", "方向", "执行价", "权利金", "合约", "操作"]
-    for col, header in zip(cols, headers):
-        col.markdown(f"**{header}**")
+    # 用markdown单独显示表头，避免横向被挤掉
+    st.markdown("""
+    | 类型 | 方向 | 执行价 | 权利金 | 合约 | 操作 |
+    | :---: | :---: | :---: | :---: | :---: | :---: |
+    """)
 
+    # 逐条显示每个腿，用columns显示具体内容和操作按钮
     for i, leg in enumerate(st.session_state.legs):
         cols = st.columns([1, 1, 2, 2, 1, 1])
         leg['type'] = cols[0].selectbox("", ['call', 'put'], index=0 if leg['type'] == 'call' else 1, key=f"type_{i}")
@@ -190,28 +192,20 @@ if st.session_state.legs:
 
     fig = go.Figure()
 
+    # 盈利和亏损区间分开绘制
+    pos_x = [x for x, y in zip(prices, payoff) if y >= 0]
+    pos_y = [y for y in payoff if y >= 0]
+    neg_x = [x for x, y in zip(prices, payoff) if y < 0]
+    neg_y = [y for y in payoff if y < 0]
+
     # 收益曲线（黑色线）
     fig.add_trace(go.Scatter(x=prices, y=payoff, mode='lines', name='Payoff', line=dict(color='black')))
 
-    # 盈利区域填充（绿色半透明）
-    fig.add_trace(go.Scatter(
-        x=prices, y=np.maximum(payoff, 0),
-        fill='tozeroy',
-        mode='none',
-        showlegend=True,
-        name='盈利',
-        fillcolor='rgba(0,255,0,0.3)'
-    ))
+    # 盈利部分（绿色线）
+    fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='lines', name='盈利', line=dict(color='green')))
 
-    # 亏损区域填充（红色半透明）
-    fig.add_trace(go.Scatter(
-        x=prices, y=np.minimum(payoff, 0),
-        fill='tozeroy',
-        mode='none',
-        showlegend=True,
-        name='亏损',
-        fillcolor='rgba(255,0,0,0.3)'
-    ))
+    # 亏损部分（红色线）
+    fig.add_trace(go.Scatter(x=neg_x, y=neg_y, mode='lines', name='亏损', line=dict(color='red')))
 
     # 零收益线（白色虚线）
     fig.add_trace(go.Scatter(x=[prices[0], prices[-1]], y=[0, 0], mode='lines', name='零收益线', line=dict(color='white', dash='dash')))
@@ -244,6 +238,7 @@ if st.session_state.legs:
         plot_bgcolor='black',
         paper_bgcolor='black',
         font=dict(color='white'),
+        margin=dict(l=40, r=40, t=80, b=40)
     )
 
     st.plotly_chart(fig, use_container_width=True)
