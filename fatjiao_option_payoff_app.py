@@ -3,45 +3,6 @@ import numpy as np
 import plotly.graph_objs as go
 
 st.set_page_config(page_title="FATJIAO Option Payoff Assistant", layout="wide")
-
-# 手机端响应式CSS，改善手机浏览体验
-st.markdown(
-    """
-    <style>
-    /* 手机屏幕宽度小于600px时应用 */
-    @media only screen and (max-width: 600px) {
-        /* 主容器内边距缩小 */
-        .css-1d391kg {
-            padding-left: 8px !important;
-            padding-right: 8px !important;
-        }
-        /* 标题字体变小 */
-        h1, h2, h3 {
-            font-size: 1.5rem !important;
-        }
-        /* 段落字体大小 */
-        p, div, span {
-            font-size: 1rem !important;
-            line-height: 1.4 !important;
-        }
-        /* 数据表宽度自适应，防止横向滚动 */
-        .stDataFrame table {
-            width: 100% !important;
-            table-layout: fixed !important;
-            word-wrap: break-word !important;
-        }
-        /* 按钮宽度占满，字体加大 */
-        button {
-            min-width: 100% !important;
-            font-size: 1rem !important;
-            padding: 10px 0 !important;
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 st.title("📈 FATJIAO Option Payoff Assistant")
 
 # ===== 预设策略字典（含通俗说明与实例） =====
@@ -268,4 +229,33 @@ if st.session_state.legs:
             marker=dict(color='yellow', size=14, symbol='star')))
 
     fig.update_layout(
-        title='期权策略到期盈亏
+        title='期权策略到期盈亏图',
+        xaxis_title='标的价格',
+        yaxis_title='盈亏',
+        hovermode='x unified',
+        plot_bgcolor='black',
+        paper_bgcolor='black',
+        font=dict(color='white'),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+# 手机端样式优化
+st.markdown(
+    """
+    <style>
+    @media only screen and (max-width: 600px) {
+        .css-18e3th9 {
+            padding: 1rem 0.5rem;
+        }
+        .css-1d391kg {
+            padding: 0.5rem;
+        }
+        .stSidebar {
+            width: 90vw !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
