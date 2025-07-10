@@ -134,13 +134,12 @@ if st.session_state.strategy_description or st.session_state.strategy_example:
 # 当前组合显示
 st.subheader("当前组合")
 if st.session_state.legs:
-    # 用markdown单独显示表头，避免横向被挤掉
-    st.markdown("""
-    | 类型 | 方向 | 执行价 | 权利金 | 合约 | 操作 |
-    | :---: | :---: | :---: | :---: | :---: | :---: |
-    """)
+    # 只显示一次表头
+    header_cols = st.columns([1, 1, 2, 2, 1, 1])
+    headers = ["类型", "方向", "执行价", "权利金", "合约", "操作"]
+    for col, header in zip(header_cols, headers):
+        col.markdown(f"**{header}**")
 
-    # 逐条显示每个腿，用columns显示具体内容和操作按钮
     for i, leg in enumerate(st.session_state.legs):
         cols = st.columns([1, 1, 2, 2, 1, 1])
         leg['type'] = cols[0].selectbox("", ['call', 'put'], index=0 if leg['type'] == 'call' else 1, key=f"type_{i}")
@@ -226,19 +225,4 @@ if st.session_state.legs:
         fig.add_trace(go.Scatter(
             x=[current_price], y=[payoff_at_current],
             mode='markers+text', name='当前价格点',
-            text=[f'{current_price:.2f}'],
-            textposition='bottom center',
-            marker=dict(color='yellow', size=14, symbol='star')))
-
-    fig.update_layout(
-        title='期权策略到期盈亏图',
-        xaxis_title='标的价格',
-        yaxis_title='盈亏',
-        hovermode='x unified',
-        plot_bgcolor='black',
-        paper_bgcolor='black',
-        font=dict(color='white'),
-        margin=dict(l=40, r=40, t=80, b=40)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+            text=[f'{current_price:.2
