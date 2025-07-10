@@ -190,20 +190,28 @@ if st.session_state.legs:
 
     fig = go.Figure()
 
-    # 盈利和亏损区间分开绘制
-    pos_x = [x for x, y in zip(prices, payoff) if y >= 0]
-    pos_y = [y for y in payoff if y >= 0]
-    neg_x = [x for x, y in zip(prices, payoff) if y < 0]
-    neg_y = [y for y in payoff if y < 0]
-
     # 收益曲线（黑色线）
     fig.add_trace(go.Scatter(x=prices, y=payoff, mode='lines', name='Payoff', line=dict(color='black')))
 
-    # 盈利部分（绿色线）
-    fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='lines', name='盈利', line=dict(color='green')))
+    # 盈利区域填充（绿色半透明）
+    fig.add_trace(go.Scatter(
+        x=prices, y=np.maximum(payoff, 0),
+        fill='tozeroy',
+        mode='none',
+        showlegend=True,
+        name='盈利',
+        fillcolor='rgba(0,255,0,0.3)'
+    ))
 
-    # 亏损部分（红色线）
-    fig.add_trace(go.Scatter(x=neg_x, y=neg_y, mode='lines', name='亏损', line=dict(color='red')))
+    # 亏损区域填充（红色半透明）
+    fig.add_trace(go.Scatter(
+        x=prices, y=np.minimum(payoff, 0),
+        fill='tozeroy',
+        mode='none',
+        showlegend=True,
+        name='亏损',
+        fillcolor='rgba(255,0,0,0.3)'
+    ))
 
     # 零收益线（白色虚线）
     fig.add_trace(go.Scatter(x=[prices[0], prices[-1]], y=[0, 0], mode='lines', name='零收益线', line=dict(color='white', dash='dash')))
@@ -239,23 +247,3 @@ if st.session_state.legs:
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-# 手机端样式优化
-st.markdown(
-    """
-    <style>
-    @media only screen and (max-width: 600px) {
-        .css-18e3th9 {
-            padding: 1rem 0.5rem;
-        }
-        .css-1d391kg {
-            padding: 0.5rem;
-        }
-        .stSidebar {
-            width: 90vw !important;
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
