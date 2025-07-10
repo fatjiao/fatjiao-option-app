@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objs as go
-import pandas as pd
 
 st.set_page_config(page_title="FATJIAO Option Payoff Assistant")  # 默认布局，更适合手机
 
@@ -11,24 +10,24 @@ st.title("📈 FATJIAO Option Payoff Assistant")
 PREDEFINED_STRATEGIES = {
     "None": [],
     "Covered Call (备兑看涨)": [
-        {'type': 'call', 'position': 'short', 'strike': 105, 'premium': 3.0, 'contracts': 1},
+        {'type': 'call', 'position': 'short', 'strike': 105.0, 'premium': 3.0, 'contracts': 1},
     ],
     "Protective Put (防护性看跌)": [
-        {'type': 'put', 'position': 'long', 'strike': 95, 'premium': 2.0, 'contracts': 1},
+        {'type': 'put', 'position': 'long', 'strike': 95.0, 'premium': 2.0, 'contracts': 1},
     ],
     "Bull Call Spread (牛市看涨价差)": [
-        {'type': 'call', 'position': 'long', 'strike': 100, 'premium': 5.0, 'contracts': 1},
-        {'type': 'call', 'position': 'short', 'strike': 110, 'premium': 2.0, 'contracts': 1},
+        {'type': 'call', 'position': 'long', 'strike': 100.0, 'premium': 5.0, 'contracts': 1},
+        {'type': 'call', 'position': 'short', 'strike': 110.0, 'premium': 2.0, 'contracts': 1},
     ],
     "Bear Put Spread (熊市看跌价差)": [
-        {'type': 'put', 'position': 'long', 'strike': 110, 'premium': 6.0, 'contracts': 1},
-        {'type': 'put', 'position': 'short', 'strike': 100, 'premium': 3.0, 'contracts': 1},
+        {'type': 'put', 'position': 'long', 'strike': 110.0, 'premium': 6.0, 'contracts': 1},
+        {'type': 'put', 'position': 'short', 'strike': 100.0, 'premium': 3.0, 'contracts': 1},
     ],
     "Iron Condor (铁鹰)": [
-        {'type': 'put', 'position': 'long', 'strike': 90, 'premium': 1.0, 'contracts': 1},
-        {'type': 'put', 'position': 'short', 'strike': 95, 'premium': 2.0, 'contracts': 1},
-        {'type': 'call', 'position': 'short', 'strike': 105, 'premium': 2.0, 'contracts': 1},
-        {'type': 'call', 'position': 'long', 'strike': 110, 'premium': 1.0, 'contracts': 1},
+        {'type': 'put', 'position': 'long', 'strike': 90.0, 'premium': 1.0, 'contracts': 1},
+        {'type': 'put', 'position': 'short', 'strike': 95.0, 'premium': 2.0, 'contracts': 1},
+        {'type': 'call', 'position': 'short', 'strike': 105.0, 'premium': 2.0, 'contracts': 1},
+        {'type': 'call', 'position': 'long', 'strike': 110.0, 'premium': 1.0, 'contracts': 1},
     ],
 }
 
@@ -60,21 +59,20 @@ with st.sidebar.form("add_leg_form"):
             'contracts': contracts
         })
 
-# 当前标的价格输入，手机端单独一行
+# 当前标的价格输入
 current_price = st.number_input("当前标的价格（可选）", min_value=0.0, step=0.01, format="%.2f")
 
 # 主界面 - 当前组合
 st.subheader("当前组合")
 
 if st.session_state.legs:
-    # 用折叠控件显示每条腿，手机浏览更友好
     for i, leg in enumerate(st.session_state.legs):
         with st.expander(f"期权腿 {i+1} - 类型:{leg['type']}，方向:{leg['position']}，执行价:{leg['strike']:.2f}"):
             leg['type'] = st.selectbox("类型", ['call', 'put'], index=0 if leg['type']=='call' else 1, key=f"type_{i}")
             leg['position'] = st.selectbox("方向", ['long', 'short'], index=0 if leg['position']=='long' else 1, key=f"pos_{i}")
-            leg['strike'] = st.number_input("执行价", value=leg['strike'], step=1.0, format="%.2f", key=f"strike_{i}")
-            leg['premium'] = st.number_input("权利金", value=leg['premium'], step=0.1, format="%.2f", key=f"premium_{i}")
-            leg['contracts'] = st.number_input("合约数", value=leg['contracts'], step=1, format="%d", key=f"contracts_{i}")
+            leg['strike'] = st.number_input("执行价", value=float(leg['strike']), step=1.0, format="%.2f", key=f"strike_{i}")
+            leg['premium'] = st.number_input("权利金", value=float(leg['premium']), step=0.1, format="%.2f", key=f"premium_{i}")
+            leg['contracts'] = st.number_input("合约数", value=int(leg['contracts']), step=1, format="%d", key=f"contracts_{i}")
             if st.button("❌ 删除该腿", key=f"delete_{i}"):
                 st.session_state.legs.pop(i)
                 st.experimental_rerun()
@@ -89,8 +87,8 @@ if st.session_state.legs:
     st.subheader("📊 到期收益图")
 
     prices = np.linspace(
-        0.5 * min(leg['strike'] for leg in st.session_state.legs),
-        1.5 * max(leg['strike'] for leg in st.session_state.legs), 500
+        0.5 * min(float(leg['strike']) for leg in st.session_state.legs),
+        1.5 * max(float(leg['strike']) for leg in st.session_state.legs), 500
     )
 
     def option_leg_payoff(s, strike, premium, otype, pos, contracts):
@@ -100,7 +98,7 @@ if st.session_state.legs:
     def total_payoff(s, legs):
         total = np.zeros_like(s)
         for leg in legs:
-            total += option_leg_payoff(s, leg['strike'], leg['premium'], leg['type'], leg['position'], leg['contracts'])
+            total += option_leg_payoff(s, float(leg['strike']), float(leg['premium']), leg['type'], leg['position'], int(leg['contracts']))
         return total
 
     payoff = total_payoff(prices, st.session_state.legs)
@@ -115,7 +113,6 @@ if st.session_state.legs:
     ))
 
     # Payoff曲线，盈利绿色，亏损红色
-    colors = ['green' if val >= 0 else 'red' for val in payoff]
     fig.add_trace(go.Scatter(
         x=prices,
         y=payoff,
