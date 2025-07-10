@@ -2,11 +2,10 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objs as go
 
-st.set_page_config(page_title="FATJIAO Option Payoff Assistant")  # 默认布局，更适合手机
+st.set_page_config(page_title="FATJIAO Option Payoff Assistant")
 
 st.title("📈 FATJIAO Option Payoff Assistant")
 
-# ===== 预设策略字典 =====
 PREDEFINED_STRATEGIES = {
     "None": [],
     "Covered Call (备兑看涨)": [
@@ -34,14 +33,12 @@ PREDEFINED_STRATEGIES = {
 if 'legs' not in st.session_state:
     st.session_state.legs = []
 
-# 侧边栏 - 策略选择
 st.sidebar.header("策略模板选择")
 selected_strategy = st.sidebar.selectbox("选择策略模板", list(PREDEFINED_STRATEGIES.keys()))
 if st.sidebar.button("加载策略"):
     st.session_state.legs = PREDEFINED_STRATEGIES[selected_strategy].copy()
     st.success(f"已加载策略模板：{selected_strategy}")
 
-# 侧边栏 - 新增腿表单
 st.sidebar.header("添加新腿")
 with st.sidebar.form("add_leg_form"):
     otype = st.selectbox("类型", ['call', 'put'])
@@ -59,12 +56,9 @@ with st.sidebar.form("add_leg_form"):
             'contracts': contracts
         })
 
-# 当前标的价格输入
 current_price = st.number_input("当前标的价格（可选）", min_value=0.0, step=0.01, format="%.2f")
 
-# 主界面 - 当前组合
 st.subheader("当前组合")
-
 if st.session_state.legs:
     for i, leg in enumerate(st.session_state.legs):
         with st.expander(f"期权腿 {i+1} - 类型:{leg['type']}，方向:{leg['position']}，执行价:{leg['strike']:.2f}"):
@@ -82,7 +76,6 @@ if st.session_state.legs:
 else:
     st.info("当前没有任何腿，请先添加或加载策略模板。")
 
-# 绘图部分
 if st.session_state.legs:
     st.subheader("📊 到期收益图")
 
@@ -105,21 +98,33 @@ if st.session_state.legs:
 
     fig = go.Figure()
 
-    # 0 盈亏线，白色虚线
+    # 0盈亏线，白色虚线
     fig.add_trace(go.Scatter(
         x=[prices[0], prices[-1]], y=[0, 0],
         mode='lines', line=dict(color='white', dash='dash'),
         showlegend=False
     ))
 
-    # Payoff曲线，盈利绿色，亏损红色
-    fig.add_trace(go.Scatter(
-        x=prices,
-        y=payoff,
-        mode='lines',
-        line=dict(color='green'),
-        name='盈亏曲线'
-    ))
+    # 利用断点分段，绘制绿色和红色分段线条
+    # 先找到分段区间（盈亏符号变化处）
+    signs = np.sign(payoff)
+    segment_indices = [0]
+    for i in range(1, len(signs)):
+        if signs[i] != signs[i-1]:
+            segment_indices.append(i)
+    segment_indices.append(len(payoff))
+
+    # 分段绘制不同颜色
+    for start, end in zip(segment_indices[:-1], segment_indices[1:]):
+        segment_x = prices[start:end]
+        segment_y = payoff[start:end]
+        color = 'green' if segment_y[0] >= 0 else 'red'
+        fig.add_trace(go.Scatter(
+            x=segment_x, y=segment_y,
+            mode='lines',
+            line=dict(color=color, width=3),
+            showlegend=False
+        ))
 
     # 标记当前标的价格
     if current_price > 0:
